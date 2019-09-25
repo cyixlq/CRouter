@@ -1,0 +1,2 @@
+include ':app', ':compiler', ':annotion', ':crouter', ':login', ':stub'
+rootProject.name='CRouter'
