@@ -21,11 +21,18 @@ activity获取结果跳转（startActivityForResult）：支持
 
 activity携带参数跳转：支持（以原生Bundle形式）
 
-跳转拦截器：暂不支持
+跳转拦截器：支持
 
-跳转回调：暂不支持
+跳转回调：支持
 
 url响应跳转：不支持
+
+androidX：不支持（要支持很简单，修改CRouter中的一行代码，如下代码所示） 
+```
+import android.support.v4.app.Fragment; // 将此处v4包下的Fragment改成androidx包下的就行
+```
+
+service启动获取：不支持
 
 ## 使用方法
 
@@ -61,6 +68,39 @@ implementation project(path: ':crouter')
    - 在各个模块的Activity类或者Fragment类上添加@RouterPath注解，并将路径值填入注解中，例如：@RouterPath("main")
    
    -  使用CRouter.get().open("main");即可打开对应activity或者获取对应Fragment实例(需要强转)
+   
+3. 跳转回调以及拦截器：
+
+   - 设置全局回调，直接调用CRouter.get().setGlobalCallback()，例如： 
+       ```
+       CRouter.get().setGlobalCallback(new ICRouterCallback() {
+            @Override
+            public boolean onBeforeOpen(Context context, String path) { 
+                // 打开之前，如果返回true代表拦截，false表示不拦截
+                return false;
+            }
+
+            @Override
+            public void onAfterOpen(Context context, String path) {
+                // 打开之后
+                Toast.makeText(MyApplication.this, path, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNotFound(Context context, String path) {
+                // 跳转路径未找到
+                Toast.makeText(MyApplication.this, "Not Found" + path, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Context context, String path, Exception e) {
+                // 跳转路径出错
+            }
+        });
+       ```
+
+   - 局部回调，在open方法或者openForResult方法调用时传入ICRouterCallback即可。
+   当有局部回调时，优先使用局部回调，不执行全局回调！
    
 ## 后话
 

@@ -16,11 +16,28 @@
         tools:ignore="HardcodedText" />
 
     <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Login"
+        android:onClick="login"
+        tools:ignore="HardcodedText" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="To LoginActivity"
         android:layout_gravity="center|start"
         android:onClick="toLogin"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Not Found"
+        android:onClick="notFound"
+        android:layout_gravity="center"
         tools:ignore="HardcodedText" />
 
     <Button
