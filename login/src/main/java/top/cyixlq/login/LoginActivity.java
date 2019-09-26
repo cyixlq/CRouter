@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import top.cyixlq.annotion.RouterPath;
+import top.cyixlq.crouter.CRouter;
 
 
 @RouterPath("login")
@@ -34,5 +35,9 @@ public class LoginActivity extends AppCompatActivity {
         intent.putExtras(bundle);
         setResult(RESULT_OK, intent);
         finish();
+    }
+
+    public void toSecondActivity(View view) {
+        CRouter.get().open(this, "second");
     }
 }
