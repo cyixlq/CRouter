@@ -8,10 +8,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
+import top.cyixlq.annotion.Module;
 import top.cyixlq.annotion.RouterPath;
 import top.cyixlq.crouter.CRouter;
 import top.cyixlq.login.BlankFragment;
 
+@Module("app")
 @RouterPath("main")
 public class MainActivity extends AppCompatActivity {
 

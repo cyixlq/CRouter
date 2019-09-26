@@ -35,7 +35,13 @@ url响应跳转：不支持
 CRouter.get().init(this);
 ```
 
-引入依赖，各个模块都需要引入，参照[app/build.gradle](./app/build.gradle)
+引入依赖，各个模块都需要引入： 
+```
+annotationProcessor project(path: ':compiler')
+implementation project(path: ':crouter')
+```
+参照[app/build.gradle](./app/build.gradle)
+和[login/build.gradle](./login/build.gradle)
 
 1. 未使用组件化的情况下：
 

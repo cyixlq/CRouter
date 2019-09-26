@@ -2,8 +2,6 @@ package top.cyixlq.compiler;
 
 import com.google.auto.service.AutoService;
 
-import org.checkerframework.checker.signature.qual.ClassGetName;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
@@ -11,12 +9,14 @@ import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 
 import top.cyixlq.annotion.Module;
@@ -41,6 +41,11 @@ public class RouterProcessor extends AbstractProcessor {
         types.add(Module.class.getCanonicalName());
         types.add(RouterPath.class.getCanonicalName());
         return types;
+    }
+
+    @Override
+    public Set<String> getSupportedOptions() {
+        return super.getSupportedOptions();
     }
 
     @Override
