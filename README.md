@@ -1,6 +1,6 @@
 # CRouter
 
-使劲重复造轮子——组件路由框架，参照[ActivityRouter](https://github.com/mzule/ActivityRouter)
+疯狂地重复造轮子——组件路由框架，参照[ActivityRouter](https://github.com/mzule/ActivityRouter)
 重新造的轮子，支持Fragment实例获取，原库好像不支持。。。
 
 ## 特点
