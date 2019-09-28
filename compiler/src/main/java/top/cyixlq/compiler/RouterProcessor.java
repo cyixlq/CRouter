@@ -129,9 +129,10 @@ public class RouterProcessor extends AbstractProcessor {
     }
 
     private boolean generateRouterModule(String moduleName, Set<? extends Element> elements) {
+        Writer writer = null;
         try {
             JavaFileObject sourceFile = filer.createSourceFile("top.cyixlq.crouter." + moduleName);
-            Writer writer = sourceFile.openWriter();
+            writer = sourceFile.openWriter();
             writer.write("package top.cyixlq.crouter;\n\n" +
                     "public final class " + moduleName + "{\n" +
                     "\tpublic static final void inject() {\n");
@@ -143,11 +144,18 @@ public class RouterProcessor extends AbstractProcessor {
             }
             writer.write("\t}\n");
             writer.write("}");
-            writer.close();
             return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
