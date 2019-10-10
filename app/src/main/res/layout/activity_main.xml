@@ -48,4 +48,11 @@
         android:onClick="addFragment"
         tools:ignore="HardcodedText" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="To SecondActivity"
+        android:layout_gravity="bottom"
+        android:onClick="toSecondActivity"
+        tools:ignore="HardcodedText" />
 </FrameLayout>

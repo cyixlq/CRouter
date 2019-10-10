@@ -1,10 +1,17 @@
 package top.cyixlq.compiler;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 
 import java.io.IOException;
-import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -15,37 +22,33 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
-import javax.tools.JavaFileObject;
+import javax.tools.Diagnostic;
 
-import top.cyixlq.annotion.Module;
-import top.cyixlq.annotion.Modules;
 import top.cyixlq.annotion.RouterPath;
 
 @AutoService(Processor.class)
 public class RouterProcessor extends AbstractProcessor {
 
+    private static final String ROUTER_MODULE = "RouterModule_";
+    private static final String PACKAGE_NAME = "top.cyixlq.crouter";
+
     private Filer filer;
+    private Messager messager;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         filer = processingEnv.getFiler();
+        messager = processingEnv.getMessager();
     }
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> types = new HashSet<>();
-        types.add(Modules.class.getCanonicalName());
-        types.add(Module.class.getCanonicalName());
         types.add(RouterPath.class.getCanonicalName());
         return types;
-    }
-
-    @Override
-    public Set<String> getSupportedOptions() {
-        return super.getSupportedOptions();
     }
 
     @Override
@@ -58,104 +61,61 @@ public class RouterProcessor extends AbstractProcessor {
         if (annotations.isEmpty()) {
             return false;
         }
-
-        boolean hasModule = false;
-        boolean hasModules = false;
-
-        // 处理@Module注解
-        final Set<? extends Element> moduleElements = roundEnv.getElementsAnnotatedWith(Module.class);
-        String moduleName = "RouterModule";
-        if (moduleElements != null && moduleElements.size() > 0) {
-            if (moduleElements.size() > 1) {
-                throw new RuntimeException("A module can only have one @Module annotation");
-            }
-            moduleName += "$" + moduleElements.iterator().next().getAnnotation(Module.class).value();
-            hasModule = true;
-        }
-
-        // 处理@Modules注解
-        String[] modulesName = null;
-        final Set<? extends Element> modulesElements = roundEnv.getElementsAnnotatedWith(Modules.class);
-        if (modulesElements != null && modulesElements.size() > 0) {
-            modulesName = modulesElements.iterator().next().getAnnotation(Modules.class).value();
-            hasModules = true;
-        }
-
-        // 开始生成Modules或者Module代码
-        if (hasModules) {
-            generateModulesRouterInject(modulesName);
-        } else if (!hasModule) {
-            generateDefaultRouterInject();
-        }
-
         // 开始生成路径注册代码
-        final Set<? extends Element> routerPathElements = roundEnv.getElementsAnnotatedWith(RouterPath.class);
-        return generateRouterModule(moduleName, routerPathElements);
+        return generateRouterModule(roundEnv);
     }
 
-    private void generateModulesRouterInject(String[] modulesName) {
-        if (modulesName == null) return;
-        try {
-            JavaFileObject sourceFile = filer.createSourceFile("top.cyixlq.crouter.RouterInjector");
-            Writer writer = sourceFile.openWriter();
-            writer.write("package top.cyixlq.crouter;\n\n" +
-                    "public final class RouterInjector {\n" +
-                    "\tpublic static final void init() {\n");
-            for (String name : modulesName) {
-                writer.write("\t\tRouterModule$" + name + ".inject();\n");
+    private boolean generateRouterModule(RoundEnvironment roundEnv) {
+        // 带有RouterPath注解的节点（其实都是类节点）
+        final Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(RouterPath.class);
+
+        // 开始收集分类module
+        Map<String, List<PathBean>> map = new HashMap<>();
+        for (Element element : elements) {
+            final String path = element.getAnnotation(RouterPath.class).value();
+            if (!isOneOfTag(path)) {
+                messager.printMessage(Diagnostic.Kind.ERROR, "路径中必须包含/符号，且只能包含一个/符号");
             }
-            writer.write("\t}\n");
-            writer.write("}");
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            final String[] pathInfo = path.split("/");
+            final String moduleName = pathInfo[0];
+            final String className = ((TypeElement) element).getQualifiedName().toString();
+            List<PathBean> pathBeans = map.get(moduleName);
+            if (pathBeans == null) {
+                pathBeans = new ArrayList<>();
+                map.put(moduleName, pathBeans);
+            }
+            pathBeans.add(new PathBean(moduleName, pathInfo[1], className));
         }
+
+        if (map.isEmpty()) return false;
+
+        Set<String> moduleNameSet = map.keySet();
+        for (String moduleName : moduleNameSet) {
+            final List<PathBean> pathBeans = map.get(moduleName);
+            MethodSpec.Builder inject = MethodSpec.methodBuilder("inject")
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+            for (PathBean pathBean : pathBeans) {
+                inject.addStatement("CRouter.get().addPath($S, $S, $L.class)", pathBean.getModuleName(),
+                        pathBean.getPath(), pathBean.getClassName());
+            }
+            TypeSpec routerModule = TypeSpec.classBuilder(ROUTER_MODULE + moduleName)
+                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                    .addSuperinterface(ClassName.get(PACKAGE_NAME, "IRouterModule"))
+                    .addMethod(inject.build())
+                    .build();
+            try {
+                JavaFile.builder(PACKAGE_NAME, routerModule)
+                        .build().writeTo(filer);
+            } catch (IOException e) {
+                e.printStackTrace();
+                messager.printMessage(Diagnostic.Kind.ERROR, e.getLocalizedMessage());
+            }
+        }
+        return true;
     }
 
-    private void generateDefaultRouterInject() {
-        try {
-            JavaFileObject sourceFile = filer.createSourceFile("top.cyixlq.crouter.RouterInjector");
-            Writer writer = sourceFile.openWriter();
-            writer.write("package top.cyixlq.crouter;\n\n" +
-                    "public final class RouterInjector {\n" +
-                    "\tpublic static final void init() {\n");
-            writer.write("\t\tRouterModule.inject();\n");
-            writer.write("\t}\n");
-            writer.write("}");
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private boolean generateRouterModule(String moduleName, Set<? extends Element> elements) {
-        Writer writer = null;
-        try {
-            JavaFileObject sourceFile = filer.createSourceFile("top.cyixlq.crouter." + moduleName);
-            writer = sourceFile.openWriter();
-            writer.write("package top.cyixlq.crouter;\n\n" +
-                    "public final class " + moduleName + "{\n" +
-                    "\tpublic static final void inject() {\n");
-            for (Element element : elements) {
-                final String path = element.getAnnotation(RouterPath.class).value();
-                final TypeElement typeElement = (TypeElement) element;
-                writer.write("\t\tCRouter.get().addPath(\"" + path+ "\","
-                        + typeElement.getQualifiedName().toString() + ".class);\n");
-            }
-            writer.write("\t}\n");
-            writer.write("}");
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    private boolean isOneOfTag(final String path) {
+        return path.indexOf('/') == path.lastIndexOf('/');
     }
 }

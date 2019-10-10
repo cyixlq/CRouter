@@ -7,7 +7,6 @@ import android.widget.Toast;
 import top.cyixlq.crouter.CRouter;
 import top.cyixlq.crouter.ICRouterCallback;
 
-@top.cyixlq.annotion.Modules({"app", "login"})
 public class MyApplication extends Application {
 
     private static MyApplication myApplication;

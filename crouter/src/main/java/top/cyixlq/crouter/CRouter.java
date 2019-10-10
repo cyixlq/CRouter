@@ -12,7 +12,12 @@ import java.util.Map;
 
 public final class CRouter {
 
-    private Map<String, Class<?>> classMapMap;
+    /**
+     *                  路径后半段名称 => class
+     *  module名称 =>   路径后半段名称 => class
+     *                  路径后半段名称 => class
+     */
+    private Map<String, Map<String, Class<?>>> classMapMap;
     private Application application;
     private ICRouterCallback globalCallback;
 
@@ -37,11 +42,16 @@ public final class CRouter {
         this.application = application;
     }
 
-    public void addPath(String path, Class<?> clazz) {
-        if (classMapMap.containsKey(path)) {
-            throw new RuntimeException(path + "Already registered");
+    public void addPath(String moduleName, String path, Class<?> clazz) {
+        Map<String, Class<?>> moduleClassMap = classMapMap.get(moduleName);
+        if (moduleClassMap == null) {
+            moduleClassMap = new HashMap<>();
+            classMapMap.put(moduleName, moduleClassMap);
         }
-        classMapMap.put(path, clazz);
+        if (moduleClassMap.containsKey(path)) {
+            throw new RuntimeException(moduleName + "/" + path + "already registered");
+        }
+        moduleClassMap.put(path, clazz);
     }
 
     public Object open(String path) {
@@ -81,18 +91,17 @@ public final class CRouter {
     }
 
     private Object doOpen(Context context, String path, Bundle bundle, int requestCode, ICRouterCallback callback) {
-        injectIfNeed();
-        Class<?> clazz = classMapMap.get(path);
+        final String[] pathInfo = getPathInfo(path);
+        injectIfNeed(pathInfo[0]);
+        final Map<String, Class<?>> classMap = classMapMap.get(pathInfo[0]);
+        if (classMap == null) {
+            onNotFound(context, path, callback, new RuntimeException(pathInfo[0] + "===>>> module not register!"));
+            return null;
+        }
+        final Class<?> clazz = classMap.get(pathInfo[1]);
         if (clazz == null) {
-            if (callback != null) {  // 如果传入了局部回调，优先使用局部回调
-                callback.onNotFound(context, path);
-                return null;
-            } else if (this.globalCallback != null) {
-                this.globalCallback.onNotFound(context, path);
-                return null;
-            } else {
-                throw new RuntimeException(path + "===>>> path not found!");
-            }
+            onNotFound(context, path, callback, new RuntimeException(path + "===>>> path not found!"));
+            return null;
         }
         if(Fragment.class.isAssignableFrom(clazz) || android.app.Fragment.class.isAssignableFrom(clazz)) {
             try {
@@ -148,8 +157,13 @@ public final class CRouter {
     }
 
     private Intent getIntent(Context context, String path, Bundle bundle) {
-        injectIfNeed();
-        Class<?> clazz = classMapMap.get(path);
+        final String[] pathInfo = getPathInfo(path);
+        injectIfNeed(pathInfo[0]);
+        final Map<String, Class<?>> classMap = classMapMap.get(pathInfo[0]);
+        if (classMap == null) {
+            throw new RuntimeException(pathInfo[0] + "===>>> module not register!");
+        }
+        final Class<?> clazz = classMap.get(pathInfo[1]);
         if (clazz == null) {
             throw new RuntimeException(path + "===>>> path not found!");
         }
@@ -169,9 +183,15 @@ public final class CRouter {
         return intent;
     }
 
-    private void injectIfNeed() {
-        if (classMapMap.isEmpty()) {
-            RouterInjector.init();
+    private void injectIfNeed(String moduleName) {
+        if (!classMapMap.containsKey(moduleName)) {
+            try {
+                Class<?> clazz = Class.forName("top.cyixlq.crouter.RouterModule_" + moduleName);
+                IRouterModule routerModule = (IRouterModule) clazz.newInstance();
+                routerModule.inject();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -191,6 +211,23 @@ public final class CRouter {
         } else {
             throw new RuntimeException("No callbacks handle error events：" + e.getLocalizedMessage());
         }
+    }
+
+    private void onNotFound(Context context, String path, ICRouterCallback callback, Exception e) {
+        if (callback != null) {
+            callback.onNotFound(context, path);
+        } else if (this.globalCallback != null) {
+            this.globalCallback.onNotFound(context, path);
+        } else {
+            throw new RuntimeException("No callbacks handle error events：" + e.getLocalizedMessage());
+        }
+    }
+
+    private String[] getPathInfo(String path) {
+        if (path.indexOf('/') != path.lastIndexOf('/')) {
+            throw new IllegalArgumentException("The path must contain a / symbol and can only contain one / symbol");
+        }
+        return path.split("/");
     }
 
 }

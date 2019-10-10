@@ -5,7 +5,7 @@ import android.os.Bundle;
 
 import top.cyixlq.annotion.RouterPath;
 
-@RouterPath("second")
+@RouterPath("app/SecondActivity")
 public class SecondActivity extends AppCompatActivity {
 
     @Override

@@ -7,11 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import top.cyixlq.annotion.Module;
 import top.cyixlq.annotion.RouterPath;
 
-@Module("login")
-@RouterPath("blankFragment")
+@RouterPath("login/BlankFragment")
 public class BlankFragment extends Fragment {
 
 

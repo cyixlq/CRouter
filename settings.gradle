@@ -1,2 +1,2 @@
-include ':app', ':compiler', ':annotion', ':crouter', ':login', ':stub'
+include ':app', ':compiler', ':annotion', ':crouter', ':login'
 rootProject.name='CRouter'

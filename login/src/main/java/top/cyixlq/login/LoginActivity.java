@@ -10,7 +10,7 @@ import top.cyixlq.annotion.RouterPath;
 import top.cyixlq.crouter.CRouter;
 
 
-@RouterPath("login")
+@RouterPath("login/LoginActivity")
 public class LoginActivity extends AppCompatActivity {
 
     private String name;
@@ -38,6 +38,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void toSecondActivity(View view) {
-        CRouter.get().open(this, "second");
+        CRouter.get().open(this, "app/SecondActivity");
     }
 }
