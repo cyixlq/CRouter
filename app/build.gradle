@@ -6,8 +6,8 @@ android {
         applicationId "top.cyixlq.myapplication"
         minSdkVersion 19
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "5.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -30,5 +30,5 @@ dependencies {
 
     /*implementation 'com.github.mzule.activityrouter:activityrouter:1.2.2'
     annotationProcessor 'com.github.mzule.activityrouter:compiler:1.1.7'*/
-    //implementation project(path: ':login')
+    implementation project(path: ':login')
 }

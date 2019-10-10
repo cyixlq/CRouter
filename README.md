@@ -8,8 +8,8 @@
 性能：几乎0反射，只在获取Fragment实例和注入class的时候使用了反射
 
 class注入：与ARouter获取dex分包再获取类，调用类中的方法注入不同。
-本库直接使用代码进行class注入，无需获取dex分包，效率明显高于ARouter。
-具体可参见APT生成的代码！
+本库使用反射进行class注入，无需获取dex分包，效率明显高于ARouter，并且只在用到的时候进行注入。
+具体可参见APT生成的代码以及CRouter类中的injectIfNeed方法！
 
 fragment获取：支持
 
