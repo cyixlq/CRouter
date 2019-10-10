@@ -209,7 +209,7 @@ public final class CRouter {
         } else if (this.globalCallback != null) {
             this.globalCallback.onError(context, path, e);
         } else {
-            throw new RuntimeException("No callbacks handle error events：" + e.getLocalizedMessage());
+            throw new RuntimeException("No callbacks handle Error events：" + e.getLocalizedMessage());
         }
     }
 
@@ -219,7 +219,7 @@ public final class CRouter {
         } else if (this.globalCallback != null) {
             this.globalCallback.onNotFound(context, path);
         } else {
-            throw new RuntimeException("No callbacks handle error events：" + e.getLocalizedMessage());
+            throw new RuntimeException("No callbacks handle NotFound events：" + e.getLocalizedMessage());
         }
     }
 
